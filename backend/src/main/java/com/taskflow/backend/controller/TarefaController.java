@@ -1,29 +1,31 @@
 package com.taskflow.backend.controller;
 
 import com.taskflow.backend.model.Tarefa;
-import com.taskflow.backend.repository.TarefaRepository;
+import com.taskflow.backend.service.TarefaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/tarefas")
-@CrossOrigin(origins = "*") // Permite que o Frontend (no futuro) aceda à API sem erros de CORS
+@CrossOrigin(origins = "*")
 public class TarefaController {
 
     @Autowired
-    private TarefaRepository tarefaRepository;
+    private TarefaService tarefaService;
 
-    // Rota para listar todas as tarefas (GET http://localhost:8080/api/tarefas)
     @GetMapping
-    public List<Tarefa> listarTodas() {
-        return tarefaRepository.findAll();
+    public ResponseEntity<List<Tarefa>> listarTodas() {
+        List<Tarefa> tarefas = tarefaService.listarTodas();
+        return ResponseEntity.ok(tarefas); // Retorna 200 OK com a lista
     }
 
-    // Rota para salvar uma nova tarefa (POST http://localhost:8080/api/tarefas)
     @PostMapping
-    public Tarefa criar(@RequestBody Tarefa tarefa) {
-        return tarefaRepository.save(tarefa);
+    public ResponseEntity<Tarefa> criar(@RequestBody Tarefa tarefa) {
+        Tarefa novaTarefa = tarefaService.salvar(tarefa);
+        return ResponseEntity.status(HttpStatus.CREATED).body(novaTarefa); // Retorna 201 Created
     }
 }
