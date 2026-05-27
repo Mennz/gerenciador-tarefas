@@ -6,6 +6,7 @@ function App() {
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
   const [dataVencimento, setDataVencimento] = useState('');
+  const [prioridade, setPrioridade] = useState('MEDIA'); // Novo Estado
 
   useEffect(() => {
     carregarTarefas();
@@ -28,11 +29,13 @@ function App() {
       await api.post('/tarefas', {
         titulo,
         descricao,
-        dataVencimento
+        dataVencimento,
+        prioridade // Enviando para a API
       });
       setTitulo('');
       setDescricao('');
       setDataVencimento('');
+      setPrioridade('MEDIA');
       carregarTarefas();
     } catch (error) {
       console.error("Erro ao criar tarefa:", error);
@@ -62,11 +65,21 @@ function App() {
     }
   };
 
+  // Função utilitária para definir as cores do Badge de prioridade
+  const obterCorPrioridade = (prio) => {
+    switch (prio) {
+      case 'ALTA': return 'bg-rose-100 text-rose-700 border-rose-200';
+      case 'MEDIA': return 'bg-amber-100 text-amber-700 border-amber-200';
+      case 'BAIXA': return 'bg-sky-100 text-sky-700 border-sky-200';
+      default: return 'bg-slate-100 text-slate-700 border-slate-200';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 text-slate-800 antialiased p-4 md:p-8">
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         
-        {/* Cabeçalho e Formulário (Coluna Lateral) */}
+        {/* Formulário */}
         <div className="md:col-span-1">
           <header className="mb-6">
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">TaskFlow</h1>
@@ -98,6 +111,19 @@ function App() {
             </div>
 
             <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Prioridade</label>
+              <select 
+                value={prioridade} 
+                onChange={(e) => setPrioridade(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="BAIXA">Baixa</option>
+                <option value="MEDIA">Média</option>
+                <option value="ALTA">Alta</option>
+              </select>
+            </div>
+
+            <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Data de Vencimento</label>
               <input 
                 type="date" 
@@ -116,7 +142,7 @@ function App() {
           </form>
         </div>
 
-        {/* Listagem das Tarefas (Coluna Principal) */}
+        {/* Listagem */}
         <div className="md:col-span-2">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-slate-900">Minhas Tarefas</h2>
@@ -138,9 +164,18 @@ function App() {
                     ${tarefa.concluida ? 'border-emerald-200 bg-emerald-50/20' : 'border-slate-200 hover:border-slate-300'}`}
                 >
                   <div className="flex flex-col gap-1 min-w-0">
-                    <h3 className={`font-semibold text-slate-900 truncate ${tarefa.concluida ? 'line-through text-slate-400' : ''}`}>
-                      {tarefa.titulo}
-                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className={`font-semibold text-slate-900 truncate ${tarefa.concluida ? 'line-through text-slate-400' : ''}`}>
+                        {tarefa.titulo}
+                      </h3>
+                      {/* Badge de Prioridade Dinâmico */}
+                      {!tarefa.concluida && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${obterCorPrioridade(tarefa.prioridade)}`}>
+                          {tarefa.prioridade}
+                        </span>
+                      )}
+                    </div>
+                    
                     {tarefa.descricao && (
                       <p className={`text-sm text-slate-600 ${tarefa.concluida ? 'line-through text-slate-400' : ''}`}>
                         {tarefa.descricao}
