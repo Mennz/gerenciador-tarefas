@@ -34,6 +34,8 @@ public class TarefaService {
     // Atualizar uma tarefa existente
     public Tarefa atualizar(Long id, Tarefa dadosAtualizados) {
         Tarefa tarefaExistente = buscarPorId(id);
+        // Atualiza a prioridade
+        tarefaExistente.setPrioridade(dadosAtualizados.getPrioridade());
         
         // Atualiza os campos vindos do formulário
         tarefaExistente.setTitulo(dadosAtualizados.getTitulo());
