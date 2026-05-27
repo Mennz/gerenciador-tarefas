@@ -1,122 +1,130 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useEffect } from 'react';
+import api from './services/api';
+import './App.css';
 
+// Componente Principal
 function App() {
-  const [count, setCount] = useState(0)
+  const [tarefas, setTarefas] = useState([]);
+  const [titulo, setTitulo] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [dataVencimento, setDataVencimento] = useState('');
+
+  // 1. Buscar todas as tarefas ao carregar o ecrã
+  useEffect(() => {
+    carregarTarefas();
+  }, []);
+
+  const carregarTarefas = async () => {
+    try {
+      const response = await api.get('/tarefas');
+      setTarefas(response.data);
+    } catch (error) {
+      console.error("Erro ao carregar tarefas:", error);
+    }
+  };
+
+  // 2. Criar uma nova tarefa
+  const lidarComEnvio = async (e) => {
+    e.preventDefault();
+    if (!titulo.trim()) return;
+
+    try {
+      await api.post('/tarefas', {
+        titulo,
+        descricao,
+        dataVencimento
+      });
+      // Limpar campos do formulário
+      setTitulo('');
+      setDescricao('');
+      setDataVencimento('');
+      // Atualizar a listagem
+      carregarTarefas();
+    } catch (error) {
+      console.error("Erro ao criar tarefa:", error);
+    }
+  };
+
+  // 3. Alternar o status de concluída (PUT)
+  const alternarConclusao = async (tarefa) => {
+    try {
+      await api.put(`/tarefas/${tarefa.id}`, {
+        ...tarefa,
+        concluida: !tarefa.concluida
+      });
+      carregarTarefas();
+    } catch (error) {
+      console.error("Erro ao atualizar tarefa:", error);
+    }
+  };
+
+  // 4. Eliminar uma tarefa (DELETE)
+  const eliminarTarefa = async (id) => {
+    if (window.confirm("Tens a certeza que desejas eliminar esta tarefa?")) {
+      try {
+        await api.delete(`/tarefas/${id}`);
+        carregarTarefas();
+      } catch (error) {
+        console.error("Erro ao eliminar tarefa:", error);
+      }
+    }
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="container">
+      <h1>TaskFlow - Gerenciador de Tarefas</h1>
 
-      <div className="ticks"></div>
+      {/* Formulário de Cadastro */}
+      <form onSubmit={lidarComEnvio} className="form-tarefa">
+        <input 
+          type="text" 
+          placeholder="Título da tarefa..." 
+          value={titulo} 
+          onChange={(e) => setTitulo(e.target.value)} 
+          required 
+        />
+        <textarea 
+          placeholder="Descrição (opcional)..." 
+          value={descricao} 
+          onChange={(e) => setDescricao(e.target.value)} 
+        />
+        <input 
+          type="date" 
+          value={dataVencimento} 
+          onChange={(e) => setDataVencimento(e.target.value)} 
+        />
+        <button type="submit">Adicionar Tarefa</button>
+      </form>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
+      {/* Listagem das Tarefas */}
+      <div className="lista-tarefas">
+        <h2>Minhas Tarefas ({tarefas.length})</h2>
+        {tarefas.length === 0 ? (
+          <p>Nenhuma tarefa encontrada. Começa por criar uma!</p>
+        ) : (
           <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
+            {tarefas.map((tarefa) => (
+              <li key={tarefa.id} className={`tarefa-item ${tarefa.concluida ? 'concluida' : ''}`}>
+                <div className="tarefa-info">
+                  <h3>{tarefa.titulo}</h3>
+                  <p>{tarefa.descricao}</p>
+                  {tarefa.dataVencimento && <small>Vence em: {tarefa.dataVencimento}</small>}
+                </div>
+                <div className="tarefa-acoes">
+                  <button onClick={() => alternarConclusao(tarefa)}>
+                    {tarefa.concluida ? 'Reabrir' : 'Concluir'}
+                  </button>
+                  <button onClick={() => eliminarTarefa(tarefa.id)} className="btn-deletar">
+                    Eliminar
+                  </button>
+                </div>
+              </li>
+            ))}
           </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        )}
+      </div>
+    </div>
+  );
 }
 
-export default App
+export default App;
