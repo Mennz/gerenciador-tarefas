@@ -18,10 +18,17 @@ public class TarefaService {
 
     // Salvar uma nova tarefa
     public Tarefa salvar(Tarefa tarefa) {
-        // Valida regras antes de salvar
         if (tarefa.getTitulo() == null || tarefa.getTitulo().trim().isEmpty()) {
             throw new IllegalArgumentException("O título da tarefa não pode ser vazio.");
         }
+
+        // Nova Regra: Título e Descrição não podem ser iguais
+        if (tarefa.getDescricao() != null && !tarefa.getDescricao().trim().isEmpty()) {
+            if (tarefa.getTitulo().trim().equalsIgnoreCase(tarefa.getDescricao().trim())) {
+                throw new IllegalArgumentException("O título e a descrição da tarefa não podem ser idênticos.");
+            }
+        }
+
         return tarefaRepository.save(tarefa);
     }
 
@@ -42,6 +49,11 @@ public class TarefaService {
         tarefaExistente.setDescricao(dadosAtualizados.getDescricao());
         tarefaExistente.setDataVencimento(dadosAtualizados.getDataVencimento());
         tarefaExistente.setConcluida(dadosAtualizados.isConcluida());
+
+        // Nova Regra: Título e Descrição não podem ser iguais
+        if (tarefaExistente.getDescricao() != null && tarefaExistente.getTitulo().trim().equalsIgnoreCase(tarefaExistente.getDescricao().trim())) {
+        throw new IllegalArgumentException("O título e a descrição da tarefa não podem ser idênticos.");
+        }
         
         return tarefaRepository.save(tarefaExistente);
     }

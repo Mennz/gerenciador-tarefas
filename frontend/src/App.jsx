@@ -28,17 +28,37 @@ function App() {
     try {
       await api.post('/tarefas', {
         titulo,
-        descricao,
-        dataVencimento,
-        prioridade // Enviando para a API
+        descricao: descricao.trim() ? descricao : null,
+        dataVencimento: dataVencimento ? dataVencimento : null,
+        prioridade
       });
+      
+      // Limpar campos
       setTitulo('');
       setDescricao('');
       setDataVencimento('');
       setPrioridade('MEDIA');
       carregarTarefas();
     } catch (error) {
-      console.error("Erro ao criar tarefa:", error);
+      console.error("Erro detalhado da API:", error);
+      
+      // Se o backend retornou um erro de validação (Bad Request 400)
+      if (error.response && error.response.data) {
+        const dadosErro = error.response.data;
+        
+        // Se o Spring retornou uma lista de erros das anotações (@Size, @NotBlank)
+        if (dadosErro.errors && Array.isArray(dadosErro.errors)) {
+          const mensagens = dadosErro.errors.map(err => err.defaultMessage).join('\n');
+          alert(`Erro de Validação:\n${mensagens}`);
+        } else if (dadosErro.message) {
+          // Se for uma mensagem de erro customizada que nós criamos
+          alert(`Erro: ${dadosErro.message}`);
+        } else {
+          alert("Erro ao criar tarefa. Verifique os campos preenchidos.");
+        }
+      } else {
+        alert("Não foi possível conectar ao servidor.");
+      }
     }
   };
 

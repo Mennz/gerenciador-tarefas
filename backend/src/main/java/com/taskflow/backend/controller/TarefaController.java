@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -26,19 +27,31 @@ public class TarefaController {
 
     // Rota para criar uma nova tarefa (POST http://localhost:8080/api/tarefas)
     @PostMapping
-    public ResponseEntity<Tarefa> criar(@RequestBody Tarefa tarefa) {
-        Tarefa novaTarefa = tarefaService.salvar(tarefa);
-        return ResponseEntity.status(HttpStatus.CREATED).body(novaTarefa); // Retorna 201 Created
+    public ResponseEntity<?> criar(@Valid @RequestBody Tarefa tarefa) {
+        try {
+            Tarefa novaTarefa = tarefaService.salvar(tarefa);
+            return ResponseEntity.status(HttpStatus.CREATED).body(novaTarefa);
+        } catch (IllegalArgumentException e) {
+            // Retorna o status 400 com a mensagem exata que escrevemos no Service
+            return ResponseEntity.badRequest().body(new CustomError(e.getMessage()));
+        }
+    }
+
+    // Classe auxiliar simples (pode colar no final do arquivo do Controller, fora da classe TarefaController)
+    class CustomError {
+        private String message;
+        public CustomError(String message) { this.message = message; }
+        public String getMessage() { return message; }
     }
 
     // Rota para atualizar (PUT http://localhost:8080/api/tarefas/{id})
     @PutMapping("/{id}")
-    public ResponseEntity<Tarefa> atualizar(@PathVariable Long id, @RequestBody Tarefa tarefa) {
+    public ResponseEntity<Tarefa> atualizar(@PathVariable Long id, @Valid @RequestBody Tarefa tarefa) {
         try {
             Tarefa tarefaAtualizada = tarefaService.atualizar(id, tarefa);
             return ResponseEntity.ok(tarefaAtualizada);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build(); // Retorna 404 Not Found se o ID não existir
+            return ResponseEntity.notFound().build();
         }
     }
 
@@ -47,7 +60,8 @@ public class TarefaController {
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         try {
             tarefaService.deletar(id);
-            return ResponseEntity.noContent().build(); // Retorna 204 No Content (padrão corporativo para deleção bem-sucedida)
+            return ResponseEntity.noContent().build(); // Retorna 204 No Content (padrão corporativo para deleção
+                                                       // bem-sucedida)
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
